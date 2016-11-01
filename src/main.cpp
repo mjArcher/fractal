@@ -20,14 +20,11 @@ void assignPixelVal(int cx, int cy, int iwidth, int rgb, unsigned char * arr);
 
 // canvas size: iwdith * iheight
 // set xL = -2, xR = 2, yB = -2, yT = 2
-void mBrot(int iwidth, int iheight, float xL, float xR, float yB, float yT)
+void mBrot(int ires, int jres, float xL, float xR, float yB, float yT)
 {
-  int asize = iwidth*iheight*3;
+  int asize = ires*jres*3;
   unsigned char *arr = new unsigned char[asize];
   
-  float epsilon = 0.0005; // The step size across the X and Y axis
-  float x;
-  float y;
 
   int maxIterations = 25; // increasing this will give you a more detailed fractal
   int maxColours    = 256;   // Change as appropriate for your display.
@@ -40,21 +37,25 @@ void mBrot(int iwidth, int iheight, float xL, float xR, float yB, float yT)
   float xLength = fabs(xL) + fabs(xR);
   float yLength = fabs(yB) + fabs(yT);
 
-  int xrange = (int)((fabs(xL) + fabs(xR))/epsilon); 
-  int yrange = (int)((fabs(yB) + fabs(yT))/epsilon);
+  /* int xrange = (int)((fabs(xL) + fabs(xR))/epsilon); */ 
+  /* int yrange = (int)((fabs(yB) + fabs(yT))/epsilon); */
 
-  cout << xrange << " " << yrange << endl;
 
-  int modpercent = xrange/10; //= (10%)
+  int modpercent = ires/10; //= (10%)
   int inc = 0;
 
-  for(int i=0; i<=xrange; i++) //should loop over pixels here
+  float xepsilon = xLength/ires;
+  float yepsilon = yLength/jres;
+
+  float x, y;
+
+  for(int i=0; i<ires; i++) //should loop over pixels here
   {
-    x = epsilon*i-fabs(xL);
+    x = (float)xepsilon*i-fabs(xL);
   /* #pragma omp parallel for schedule(dynamic) */
-    for(int j=0; j<=yrange; j++)
+    for(int j=0; j<jres; j++)
     {
-      y = epsilon*j-fabs(yB);
+      y = (float)yepsilon*j-fabs(yB);
       iterations = 0;
       complex<float> C(x,y);
       complex<float> Z(0,0);
@@ -65,12 +66,14 @@ void mBrot(int iwidth, int iheight, float xL, float xR, float yB, float yT)
         iterations++;
       }
       /* Screen.Plot(x,y, maxColors % iterations); // depending on the number of iterations, color a pixel. */
-      int xCell = (iwidth+1)*(x+fabs(xL))/xLength;
-      int yCell = (iheight+1)*(y+fabs(yB))/yLength;
-      /* if(yCell < 1600) */
-      /*   cout << yCell << endl; */
-      /* if(iterations != 1) */
-      assignPixelVal(xCell, yCell, iwidth, iterations, arr);
+      //convert into cell
+      float xratio = (x+fabs(xL))/xLength;
+      float yratio = (y+fabs(yB))/yLength;
+
+      int xCell = round(xratio * ires);
+      int yCell = round(yratio * jres);      
+
+      assignPixelVal(xCell, yCell, ires, iterations, arr);
     }
 
     if(i % modpercent == 1)
@@ -80,7 +83,7 @@ void mBrot(int iwidth, int iheight, float xL, float xR, float yB, float yT)
     }
 
   }
-  writeBitmap("./out/man.png", arr, iwidth, iheight, 1);
+  writeBitmap("./out/man.png", arr, ires, jres, 1);
   delete[] arr;
 }
 
@@ -113,9 +116,9 @@ int colours[25][3] =
   {255,  0,  0}
 };
 
-void assignPixelVal(int cx, int cy, int iwidth, int colour, unsigned char * arr)
+void assignPixelVal(int cx, int cy, int ires, int colour, unsigned char * arr)
 {
-  int index = iwidth*cx + cy; 
+  int index = ires*cy + cx; 
 
   int *rgb = colours[colour];
   /* cout << cx << " " << cy << endl; */
@@ -167,7 +170,7 @@ main()
 {
   // pick window of interest
   // parallelisation (openMP)
-  mBrot(1000, 1000, -2, 0, -2, 2);
+  mBrot(5000, 10000, -2, 0, -2, 2);
   /* createPixelArray(100, 200); */
   // read in iterations from file
   // arbitrary shapes & colour
