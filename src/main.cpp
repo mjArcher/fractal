@@ -6,31 +6,11 @@
 #include <complex>
 #include <omp.h>
 
+#include "bitmap.cpp"
+
 using namespace std;
 
 int writeBitmap(const char* name, unsigned char* buff, unsigned width, unsigned height, bool flip); 
-
-/* int shiftTest() */
-/* { */
-/*   cout << "shift test " << endl; */
-/*   unsigned char x = 4; */
-/*   unsigned int y = 8; */
-/*   cout << sizeof(x) << endl; */
-/*   cout << sizeof(y) << endl; */
-/*   y = y << 1; */
-/*   cout << y <<endl; */
-/*   printf("x = %hhx\t sizeof = %lu\n",x,sizeof(x)); */
-/*   // do a shift of 00001000 */
-/*   x = x << 1lu; */
-/*   x = x << 1lu; */
-/*   printf("x = %hhx\t sizeof = %lu\n",x,sizeof(x)); */
-/*   const char* name = "test"; */
-/*   cout << "size of name " << sizeof(name) << endl; */
-/*   cout << "size of name " << sizeof(*name) << endl; */
-/*   printf("%c", *(name+2)); */
-/*   printf("\n%s\n", name); */
-/*   //garbage collector */
-/* } */
 
 unsigned char r( unsigned long n ){return n>>16&255;}
 unsigned char g( unsigned long n ){return n>>8&255;}
@@ -38,40 +18,43 @@ unsigned char b( unsigned long n ){return n>>0&255;}
 
 void assignPixelVal(int cx, int cy, int iwidth, int rgb, unsigned char * arr);
 
-void complexTest()
+// canvas size: iwdith * iheight
+// set xL = -2, xR = 2, yB = -2, yT = 2
+void mBrot(int iwidth, int iheight, float xL, float xR, float yB, float yT)
 {
-  complex<float> com(1.0,2.0);
-  cout << com << endl;
-  cout << com*com << endl;
-  cout << abs(com) << endl;
-}
-
-
-void manBrot(int iwidth, int iheight)
-{
-  int isize = iwidth*iheight*3;
-  unsigned char *arr = new unsigned char[isize];
+  int asize = iwidth*iheight*3;
+  unsigned char *arr = new unsigned char[asize];
   
   float epsilon = 0.0005; // The step size across the X and Y axis
   float x;
   float y;
 
-  int maxIterations = 10; // increasing this will give you a more detailed fractal
-  int maxColors = 256; // Change as appropriate for your display.
+  int maxIterations = 25; // increasing this will give you a more detailed fractal
+  int maxColours    = 256;   // Change as appropriate for your display.
+
   complex<float> Z(0,0);
   complex<float> C(0,0);
+
   int iterations;
 
-  int xrange = (int)(4./epsilon); 
-  int yrange = xrange;
+  float xLength = fabs(xL) + fabs(xR);
+  float yLength = fabs(yB) + fabs(yT);
 
-  for(int i=0; i<=xrange; i++)
+  int xrange = (int)((fabs(xL) + fabs(xR))/epsilon); 
+  int yrange = (int)((fabs(yB) + fabs(yT))/epsilon);
+
+  cout << xrange << " " << yrange << endl;
+
+  int modpercent = xrange/10; //= (10%)
+  int inc = 0;
+
+  for(int i=0; i<=xrange; i++) //should loop over pixels here
   {
-    x = epsilon*i-2;
+    x = epsilon*i-fabs(xL);
   /* #pragma omp parallel for schedule(dynamic) */
     for(int j=0; j<=yrange; j++)
     {
-      y = epsilon*j-2;
+      y = epsilon*j-fabs(yB);
       iterations = 0;
       complex<float> C(x,y);
       complex<float> Z(0,0);
@@ -82,38 +65,74 @@ void manBrot(int iwidth, int iheight)
         iterations++;
       }
       /* Screen.Plot(x,y, maxColors % iterations); // depending on the number of iterations, color a pixel. */
-      int xCell = iwidth*(x + 2)/4.;
-      int yCell = iheight*(y + 2)/4.;
+      int xCell = (iwidth+1)*(x+fabs(xL))/xLength;
+      int yCell = (iheight+1)*(y+fabs(yB))/yLength;
+      /* if(yCell < 1600) */
+      /*   cout << yCell << endl; */
       /* if(iterations != 1) */
-      /*   cout <<  iterations << endl; */
-      assignPixelVal(xCell, yCell, iwidth, maxColors/iterations, arr);
-      /* std::cout << x << std::endl; */
+      assignPixelVal(xCell, yCell, iwidth, iterations, arr);
     }
-    cout << x << endl;
+
+    if(i % modpercent == 1)
+    {
+      cout << inc*10 << "%" << endl;
+      inc++;
+    }
+
   }
-  writeBitmap("./out/man.png", arr, iwidth, iheight, 0);
+  writeBitmap("./out/man.png", arr, iwidth, iheight, 1);
   delete[] arr;
 }
 
-void assignPixelVal(int cx, int cy, int iwidth, int rgb, unsigned char * arr)
+int colours[25][3] =
+{
+  {255,  0,  0},
+  {255, 64,  0},
+  {255,128,  0},
+  {255,191,  0},
+  {255,255,  0},
+  {191,255,  0},
+  {128,255,  0},
+  { 64,255,  0},
+  {  0,255,  0},
+  {  0,255, 64},
+  {  0,255,128},
+  {  0,255,191},
+  {  0,255,255},
+  {  0,191,255},
+  {  0,128,255},
+  {  0, 64,255},
+  {  0,  0,255},
+  { 64,  0,255},
+  {128,  0,255},
+  {191,  0,255},
+  {255,  0,255},
+  {255,  0,191},
+  {255,  0,128},
+  {255,  0, 64},
+  {255,  0,  0}
+};
+
+void assignPixelVal(int cx, int cy, int iwidth, int colour, unsigned char * arr)
 {
   int index = iwidth*cx + cy; 
 
+  int *rgb = colours[colour];
   /* cout << cx << " " << cy << endl; */
   /* cout << "rgb val " << rgb << endl; */
   /* if(rgb != 0 && rgb != 1 ) */
   /*   cout << rgb << endl; */
-  *(arr + index*3 + 0) = rgb;
-  *(arr + index*3 + 1) = rgb;
-  *(arr + index*3 + 2) = rgb;
+  *(arr + index*3 + 0) = rgb[0];
+  *(arr + index*3 + 1) = rgb[1];
+  *(arr + index*3 + 2) = rgb[2];
 }
 
 void createPixelArray(int iwidth, int iheight)
 {
   unsigned int *A = new unsigned int(iwidth*iheight);
   /* unsigned int rgb = (128 << 16 | 128 << 8 | 128); */
-  int isize = iwidth*iheight*3;
-  unsigned char parr[isize];
+  int asize = iwidth*iheight*3;
+  unsigned char parr[asize];
   unsigned long n = 0x557e89f3;
 
   for(int i = 0; i < iwidth*iheight/2.; i++)
@@ -135,15 +154,6 @@ void createPixelArray(int iwidth, int iheight)
   writeBitmap("test.png", parr, iwidth, iheight, 0);
 }
 
-  /* int rgb = ((r&0x0ff)<<16)|((g&0x0ff)<<8)|(b&0x0ff); */
-  /* int r,g,b; */
-  /* int rgb = new Color(r, g, b).getRGB(); */
-    /* printf("%d\n",r(testval)); */
-    /* printf("%d\n",g(testval)); */
-    /* printf("%d\n",b(testval)); */
-    /* *(parr + offset + 0) = (i >> 16) & 0xFF; */
-    /* *(parr + offset + 1) = (i >> 8) & 0xFF; */
-    /* *(parr + offset + 2) = i & 0xFF; */
 void testWrite()
 {
   // test the writeBitmap function
@@ -152,103 +162,19 @@ void testWrite()
   printf("sizeof unsigned int = %lu\n", sizeof(test)); // 4 bytes
 }
 
-int writeBitmap(const char* filename, unsigned char* buff, unsigned iwidth, unsigned iheight, bool flip = false) {
-
-  FILE* fp = fopen(filename, "wb");
-  if (!fp) abort();
-
-  png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-
-  if (!png) abort();
-
-  png_infop info = png_create_info_struct(png);
-
-  if (!info) {
-    png_destroy_write_struct(&png,
-        (png_infopp)NULL);
-    abort();
-  }
-
-  if (setjmp(png_jmpbuf(png))) abort();
-
-  png_init_io(png, fp);
-
-  png_set_IHDR(
-      png,
-      info,
-      iwidth, iheight,
-      8,
-      PNG_COLOR_TYPE_RGB,
-      PNG_INTERLACE_NONE,
-      PNG_COMPRESSION_TYPE_DEFAULT,
-      PNG_FILTER_TYPE_DEFAULT
-      );
-
-  png_write_info(png, info);
-  /* cout << "Here 1" << endl; */ 
-  /* cout << "Here " << endl; */ 
-
-  png_byte* image = (png_byte*)buff;
-
-  unsigned k;
-  png_bytep* row_pointers = new png_bytep[iheight];
-  for (k = 0; k < iheight; k++) {
-    row_pointers[k] = image + (flip ? (iheight - k - 1) : k) * iwidth * 3;
-  }
-
-  png_write_image(png, row_pointers);
-  png_write_end(png, info);
-  png_destroy_write_struct(&png, &info);
-  delete[] row_pointers;
-  fclose(fp);
-  return 0;
-}
-
-
-/* public void MBrot() */
-/* { */
-/*   float epsilon = 0.0001; // The step size across the X and Y axis */
-/*   float x; */
-/*   float y; */
-/*   int maxIterations = 10; // increasing this will give you a more detailed fractal */
-/*   int maxColors = 256; // Change as appropriate for your display. */
-
-/*   Complex Z; */
-/*   Complex C; */
-/*   int iterations; */
-/*   for(float x=-2; x<=2; x+= epsilon) */
-/*   { */
-/*     for(float y=-2; y<=2; y+= epsilon) */
-/*     { */
-/*       iterations = 0; */
-/*       C = new Complex(x, y); */
-/*       Z = new Complex(0,0); */
-
-/*       while(Complex.Abs(Z) < 2 && iterations < maxIterations) */
-/*       { */
-/*         Z = Z*Z + C; */
-/*         iterations++; */
-/*       } */
-
-/*       Screen.Plot(x,y, maxColors % iterations); // depending on the number of iterations, color a pixel. */
-/*     } */
-/*   } */
-/* } */
 
 main()
 {
-  /* complexTest(); */
-  /* createPixelArray(1280,1280); */
-  manBrot(6400, 6400);
+  // pick window of interest
+  // parallelisation (openMP)
+  mBrot(1000, 1000, -2, 0, -2, 2);
+  /* createPixelArray(100, 200); */
+  // read in iterations from file
+  // arbitrary shapes & colour
+  //
+  /* int* arr = colours[0]; */
+  /* cout << arr[0] << " " << arr[1] << " " << arr[2] << endl; */
+
+  /* cout << colours[0][] << endl; */
 }
 
-/* "name" is the filename to use, */
-/* "buff" is an array of width * height unsigned integers, where each one represents a pixel.  If the red, green and blue channels are chars in the range 0-0xFF, each unsigned integer is (r | (g << 8) | (b << 16)). */
-/* You also need to compile with -lpng (to link to libpng). */
-
-//char is smallest integer type (single byte)
-//0-255
-//unsigned int 4 bytes
-//11111111 = 255  
-//char = 1 byte, 8 bits
-//buffer is 

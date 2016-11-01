@@ -1,0 +1,82 @@
+/* public void MBrot() */
+/* { */
+/*   float epsilon = 0.0001; // The step size across the X and Y axis */
+/*   float x; */
+/*   float y; */
+/*   int maxIterations = 10; // increasing this will give you a more detailed fractal */
+/*   int maxColors = 256; // Change as appropriate for your display. */
+
+/*   Complex Z; */
+/*   Complex C; */
+/*   int iterations; */
+/*   for(float x=-2; x<=2; x+= epsilon) */
+/*   { */
+/*     for(float y=-2; y<=2; y+= epsilon) */
+/*     { */
+/*       iterations = 0; */
+/*       C = new Complex(x, y); */
+/*       Z = new Complex(0,0); */
+
+/*       while(Complex.Abs(Z) < 2 && iterations < maxIterations) */
+/*       { */
+/*         Z = Z*Z + C; */
+/*         iterations++; */
+/*       } */
+
+/*       Screen.Plot(x,y, maxColors % iterations); // depending on the number of iterations, color a pixel. */
+/*     } */
+/*   } */
+/* } */
+
+/* "name" is the filename to use, */
+/* "buff" is an array of width * height unsigned integers, where each one represents a pixel.  If the red, green and blue channels are chars in the range 0-0xFF, each unsigned integer is (r | (g << 8) | (b << 16)). */
+/* You also need to compile with -lpng (to link to libpng). */
+
+//char is smallest integer type (single byte)
+//0-255
+//unsigned int 4 bytes
+//11111111 = 255  
+//char = 1 byte, 8 bits
+//buffer is 
+
+
+/* int shiftTest() */
+/* { */
+/*   cout << "shift test " << endl; */
+/*   unsigned char x = 4; */
+/*   unsigned int y = 8; */
+/*   cout << sizeof(x) << endl; */
+/*   cout << sizeof(y) << endl; */
+/*   y = y << 1; */
+/*   cout << y <<endl; */
+/*   printf("x = %hhx\t sizeof = %lu\n",x,sizeof(x)); */
+/*   // do a shift of 00001000 */
+/*   x = x << 1lu; */
+/*   x = x << 1lu; */
+/*   printf("x = %hhx\t sizeof = %lu\n",x,sizeof(x)); */
+/*   const char* name = "test"; */
+/*   cout << "size of name " << sizeof(name) << endl; */
+/*   cout << "size of name " << sizeof(*name) << endl; */
+/*   printf("%c", *(name+2)); */
+/*   printf("\n%s\n", name); */
+/*   //garbage collector */
+/* } */
+
+  /* int rgb = ((r&0x0ff)<<16)|((g&0x0ff)<<8)|(b&0x0ff); */
+  /* int r,g,b; */
+  /* int rgb = new Color(r, g, b).getRGB(); */
+    /* printf("%d\n",r(testval)); */
+    /* printf("%d\n",g(testval)); */
+    /* printf("%d\n",b(testval)); */
+    /* *(parr + offset + 0) = (i >> 16) & 0xFF; */
+    /* *(parr + offset + 1) = (i >> 8) & 0xFF; */
+    /* *(parr + offset + 2) = i & 0xFF; */
+
+
+void complexTest()
+{
+  complex<float> com(1.0,2.0);
+  cout << com << endl;
+  cout << com*com << endl;
+  cout << abs(com) << endl;
+}
