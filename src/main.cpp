@@ -1,4 +1,4 @@
-
+#include <ctime>
 #include <png.h>
 #include <stdio.h> 
 #include <stdlib.h>
@@ -20,7 +20,7 @@ void assignPixelVal(int cx, int cy, int iwidth, int rgb, unsigned char * arr);
 
 // canvas size: iwdith * iheight
 // set xL = -2, xR = 2, yB = -2, yT = 2
-void mBrot(int ires, int jres, float xL, float xR, float yB, float yT)
+void mBrot(int ires, int jres, float xL, float xR, float yB, float yT, int threads)
 {
   int asize = ires*jres*3;
   unsigned char *arr = new unsigned char[asize];
@@ -28,13 +28,10 @@ void mBrot(int ires, int jres, float xL, float xR, float yB, float yT)
   int maxIterations = 25; // increasing this will give you a more detailed fractal
   int maxColours    = 256;   // Change as appropriate for your display.
 
-  complex<float> Z(0,0);
-  complex<float> C(0,0);
-
   int iterations;
 
-  float xLength = fabs(xL) + fabs(xR);
-  float yLength = fabs(yB) + fabs(yT);
+  float xLength = fabs(xL - xR);
+  float yLength = fabs(yB - yT);
 
   /* int xrange = (int)((fabs(xL) + fabs(xR))/epsilon); */ 
   /* int yrange = (int)((fabs(yB) + fabs(yT))/epsilon); */
@@ -47,22 +44,29 @@ void mBrot(int ires, int jres, float xL, float xR, float yB, float yT)
   float yepsilon = yLength/jres;
 
   float x, y;
+  int i;
+  complex<float> Z(0,0);
+  complex<float> temp(0,0);
 
-  for(int i=0; i<ires; i++) //should loop over pixels here
+  cout << "Number of threads " << omp_get_num_threads() << endl;
+
+#pragma omp parallel for private(i,x) num_threads(4)
+  for(i=0; i<ires; i++) //should loop over pixels here
   {
     x = (float)xepsilon*i-fabs(xL);
-  /* #pragma omp parallel for schedule(dynamic) */
-    for(int j=0; j<jres; j++)
+    int j;
+#pragma omp parallel for private(j,y,Z,iterations) num_threads(4)
+    for(j=0; j<jres; j++)
     {
       y = (float)yepsilon*j-fabs(yB);
       iterations = 0;
       complex<float> C(x,y);
-      complex<float> Z(0,0);
-
+      Z = temp;
       while(abs(Z) < 2. && iterations < maxIterations)
       {
         Z = Z*Z + C;
         iterations++;
+        /* cout << iterations << " " << omp_get_thread_num() << endl; */
       }
       /* Screen.Plot(x,y, maxColors % iterations); // depending on the number of iterations, color a pixel. */
       //convert into cell
@@ -70,7 +74,7 @@ void mBrot(int ires, int jres, float xL, float xR, float yB, float yT)
       float yratio = (y+fabs(yB))/yLength;
 
       int xCell = round(xratio * ires);
-      int yCell = round(yratio * jres);      
+      int yCell = round(yratio * jres);
 
       assignPixelVal(xCell, yCell, ires, iterations, arr);
     }
@@ -80,8 +84,8 @@ void mBrot(int ires, int jres, float xL, float xR, float yB, float yT)
       cout << inc*10 << "%" << endl;
       inc++;
     }
-
   }
+  cout << "output to file" << endl;
   writeBitmap("./out/man.png", arr, ires, jres, 1);
   delete[] arr;
 }
@@ -164,11 +168,18 @@ void testWrite()
   printf("sizeof unsigned int = %lu\n", sizeof(test)); // 4 bytes
 }
 
-main()
+main(int argc, char* argv[])
 {
   // pick window of interest
   // parallelisation (openMP)
-  mBrot(5000, 10000, -2, 0, -2, 2);
+  clock_t begin = clock();
+  cout << "threads " << argv[1] << endl;
+  omp_set_dynamic(0);  
+  omp_set_num_threads(atoi(argv[1]));
+  mBrot(20000, 20000, -0.25, 0, -1, -0.75, atoi(argv[1]));
+  clock_t end = clock();
+  double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+  cout << "Time " << elapsed_secs << endl;
   /* createPixelArray(100, 200); */
   // read in iterations from file
   // arbitrary shapes & colour
