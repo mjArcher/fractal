@@ -24,7 +24,6 @@ void mBrot(int ires, int jres, float xL, float xR, float yB, float yT)
 {
   int asize = ires*jres*3;
   unsigned char *arr = new unsigned char[asize];
-  
 
   int maxIterations = 25; // increasing this will give you a more detailed fractal
   int maxColours    = 256;   // Change as appropriate for your display.
@@ -164,7 +163,6 @@ void testWrite()
   unsigned int test = 10;
   printf("sizeof unsigned int = %lu\n", sizeof(test)); // 4 bytes
 }
-
 
 main()
 {

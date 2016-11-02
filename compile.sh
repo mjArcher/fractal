@@ -1,3 +1,3 @@
 #! /bin/bash
-g++ src/main.cpp -lpng -fopenmp -o fractal/bin
+g++ src/main.cpp -g -lpng -fopenmp -o bin/fractal
 
