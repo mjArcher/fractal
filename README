@@ -1,0 +1,11 @@
+simple mandelbrot 
+
+extensions
+==========
+Generate colours
+Different fractals?
+Reading back in?
+Speed up with GPUs
+Parallel PNG write.
+
+
