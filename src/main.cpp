@@ -64,6 +64,12 @@ void mBrot(int ires, int jres, float xL, float xR, float yB, float yT, int threa
         iterations++;
         /* cout << iterations << " " << omp_get_thread_num() << endl; */
       }
+
+
+      for(int iterations = 0; abs(Z) < 2. && iterations < maxIterations; iterations++)
+      {
+        
+      }  
       /* Screen.Plot(x,y, maxColors % iterations); // depending on the number of iterations, color a pixel. */
       //convert into cell
       float xratio = (x+fabs(xL))/xLength;
